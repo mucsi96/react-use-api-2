@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useApi } from "./useApi";
+import { useApiWithState } from "./useApiWithState";
 
 type NamesResponse = {
   names: string[];
@@ -9,30 +9,32 @@ type NamesResponse = {
 export function useGetNames() {
   const [loadMoreUrl, setLoadMoreUrl] = useState<string>("");
   const [names, setNames] = useState<string[]>([]);
-  const [load, isLoading, error] = useApi<NamesResponse>();
+  const [, load, isLoading, error] = useApiWithState<NamesResponse>();
 
   const loadNames = useCallback(() => {
-    load({
-      method: "GET",
-      url: "/api/names",
-    })
-      .then((response) => {
-        setNames(response.names);
-        setLoadMoreUrl(response.loadMoreUrl);
-      })
-      .catch(() => {});
+    load(
+      {
+        method: "GET",
+        url: "/api/names",
+      },
+      ({ names, loadMoreUrl }) => {
+        setNames(names);
+        setLoadMoreUrl(loadMoreUrl);
+      }
+    );
   }, [load]);
 
   const loadMore = useCallback(() => {
-    load({
-      method: "GET",
-      url: loadMoreUrl,
-    })
-      .then((response) => {
-        setNames([...names, ...response.names]);
-        setLoadMoreUrl(response.loadMoreUrl);
-      })
-      .catch(() => {});
+    load(
+      {
+        method: "GET",
+        url: loadMoreUrl,
+      },
+      ({ names: newNames, loadMoreUrl }) => {
+        setNames([...names, ...newNames]);
+        setLoadMoreUrl(loadMoreUrl);
+      }
+    );
   }, [load, names, loadMoreUrl]);
 
   return {
